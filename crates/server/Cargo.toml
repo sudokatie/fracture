@@ -1,5 +1,5 @@
 [package]
-name = "lattice_server"
+name = "fracture_server"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
