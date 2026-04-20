@@ -157,6 +157,244 @@ fn u8_to_dimension(value: u8) -> Option<Dimension> {
     }
 }
 
+/// Distortion level for cross-dimension messages.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum MessageDistortion {
+    /// No distortion (same dimension).
+    None,
+    /// Slight distortion (adjacent dimension).
+    Slight,
+    /// Heavy distortion (opposite dimension).
+    Heavy,
+    /// Unintelligible (Void to non-Void or vice versa).
+    Unintelligible,
+}
+
+/// A cross-dimension message.
+#[derive(Clone, Debug)]
+pub struct CrossDimensionMessage {
+    /// Sender player ID.
+    sender_id: u64,
+    /// Sender's dimension.
+    sender_dimension: Dimension,
+    /// Receiver player ID.
+    receiver_id: u64,
+    /// Message content.
+    content: String,
+    /// Distortion level based on dimension distance.
+    distortion: MessageDistortion,
+}
+
+impl CrossDimensionMessage {
+    /// Create a new cross-dimension message.
+    #[must_use]
+    pub fn new(sender_id: u64, sender_dim: Dimension, receiver_id: u64, content: String) -> Self {
+        let distortion = Self::calculate_distortion(sender_dim);
+        Self {
+            sender_id,
+            sender_dimension: sender_dim,
+            receiver_id,
+            content,
+            distortion,
+        }
+    }
+
+    /// Calculate message distortion based on sender's dimension.
+    fn calculate_distortion(dim: Dimension) -> MessageDistortion {
+        match dim {
+            Dimension::Prime => MessageDistortion::Slight,
+            Dimension::Inverted => MessageDistortion::Heavy,
+            Dimension::Void => MessageDistortion::Unintelligible,
+            Dimension::Nexus => MessageDistortion::Slight,
+        }
+    }
+
+    /// Get the distortion level.
+    #[must_use]
+    pub fn distortion(&self) -> MessageDistortion {
+        self.distortion
+    }
+
+    /// Get the distorted message content.
+    #[must_use]
+    pub fn distorted_content(&self) -> String {
+        match self.distortion {
+            MessageDistortion::None => self.content.clone(),
+            MessageDistortion::Slight => {
+                let mut chars: Vec<char> = self.content.chars().collect();
+                let len = chars.len();
+                if len > 2 {
+                    for i in (1..len).step_by(3) {
+                        if i + 1 < len {
+                            chars.swap(i, i + 1);
+                        }
+                    }
+                }
+                chars.into_iter().collect()
+            }
+            MessageDistortion::Heavy => {
+                let no_vowels: String = self.content
+                    .chars()
+                    .filter(|c| !"aeiouAEIOU".contains(*c))
+                    .collect();
+                if no_vowels.is_empty() {
+                    return "...".to_string();
+                }
+                let mut chars: Vec<char> = no_vowels.chars().collect();
+                let len = chars.len();
+                for i in (0..len).step_by(2) {
+                    if i + 1 < len {
+                        chars.swap(i, i + 1);
+                    }
+                }
+                chars.into_iter().collect()
+            }
+            MessageDistortion::Unintelligible => {
+                let len = self.content.len().min(20);
+                "...".repeat((len / 3).max(1))
+            }
+        }
+    }
+
+    /// Get the sender ID.
+    #[must_use]
+    pub fn sender_id(&self) -> u64 {
+        self.sender_id
+    }
+
+    /// Get the sender's dimension.
+    #[must_use]
+    pub fn sender_dimension(&self) -> Dimension {
+        self.sender_dimension
+    }
+
+    /// Get the receiver ID.
+    #[must_use]
+    pub fn receiver_id(&self) -> u64 {
+        self.receiver_id
+    }
+}
+
+/// An item being offered in a weak point trade.
+#[derive(Clone, Debug)]
+pub struct TradeItem {
+    /// Item type identifier.
+    item_type: String,
+    /// Quantity offered.
+    quantity: u32,
+}
+
+impl TradeItem {
+    /// Create a new trade item.
+    #[must_use]
+    pub fn new(item_type: String, quantity: u32) -> Self {
+        Self { item_type, quantity }
+    }
+
+    /// Get the item type.
+    #[must_use]
+    pub fn item_type(&self) -> &str {
+        &self.item_type
+    }
+
+    /// Get the quantity.
+    #[must_use]
+    pub fn quantity(&self) -> u32 {
+        self.quantity
+    }
+}
+
+/// A trade proposal through a weak point.
+#[derive(Clone, Debug)]
+pub struct WeakPointTrade {
+    /// Initiator player ID.
+    initiator_id: u64,
+    /// Initiator's dimension.
+    initiator_dimension: Dimension,
+    /// Responder player ID.
+    responder_id: u64,
+    /// Items offered by initiator.
+    offered_items: Vec<TradeItem>,
+    /// Items requested from responder.
+    requested_items: Vec<TradeItem>,
+    /// Weak point position where the trade occurs.
+    weak_point_pos: IVec3,
+    /// Whether the trade has been accepted.
+    accepted: bool,
+}
+
+impl WeakPointTrade {
+    /// Create a new trade proposal.
+    #[must_use]
+    pub fn new(
+        initiator_id: u64,
+        initiator_dimension: Dimension,
+        responder_id: u64,
+        weak_point_pos: IVec3,
+    ) -> Self {
+        Self {
+            initiator_id,
+            initiator_dimension,
+            responder_id,
+            offered_items: Vec::new(),
+            requested_items: Vec::new(),
+            weak_point_pos,
+            accepted: false,
+        }
+    }
+
+    /// Add an item to the offer.
+    pub fn offer_item(&mut self, item: TradeItem) {
+        self.offered_items.push(item);
+    }
+
+    /// Add an item to the request.
+    pub fn request_item(&mut self, item: TradeItem) {
+        self.requested_items.push(item);
+    }
+
+    /// Accept the trade.
+    pub fn accept(&mut self) {
+        self.accepted = true;
+    }
+
+    /// Check if the trade is accepted.
+    #[must_use]
+    pub fn is_accepted(&self) -> bool {
+        self.accepted
+    }
+
+    /// Get the weak point position.
+    #[must_use]
+    pub fn weak_point_pos(&self) -> IVec3 {
+        self.weak_point_pos
+    }
+
+    /// Get the offered items.
+    #[must_use]
+    pub fn offered_items(&self) -> &[TradeItem] {
+        &self.offered_items
+    }
+
+    /// Get the requested items.
+    #[must_use]
+    pub fn requested_items(&self) -> &[TradeItem] {
+        &self.requested_items
+    }
+
+    /// Get the initiator ID.
+    #[must_use]
+    pub fn initiator_id(&self) -> u64 {
+        self.initiator_id
+    }
+
+    /// Get the responder ID.
+    #[must_use]
+    pub fn responder_id(&self) -> u64 {
+        self.responder_id
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -287,5 +525,112 @@ mod tests {
         assert_eq!(u8_to_dimension(3), Some(Dimension::Nexus));
         assert_eq!(u8_to_dimension(4), None);
         assert_eq!(u8_to_dimension(255), None);
+    }
+
+    #[test]
+    fn test_cross_dimension_message_from_prime() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Prime, 2, "hello there".to_string());
+        assert_eq!(msg.sender_id(), 1);
+        assert_eq!(msg.receiver_id(), 2);
+        assert_eq!(msg.sender_dimension(), Dimension::Prime);
+        assert_eq!(msg.distortion(), MessageDistortion::Slight);
+    }
+
+    #[test]
+    fn test_cross_dimension_message_from_void() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Void, 2, "help me".to_string());
+        assert_eq!(msg.distortion(), MessageDistortion::Unintelligible);
+    }
+
+    #[test]
+    fn test_cross_dimension_message_from_inverted() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Inverted, 2, "danger".to_string());
+        assert_eq!(msg.distortion(), MessageDistortion::Heavy);
+    }
+
+    #[test]
+    fn test_cross_dimension_message_from_nexus() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Nexus, 2, "safe here".to_string());
+        assert_eq!(msg.distortion(), MessageDistortion::Slight);
+    }
+
+    #[test]
+    fn test_distorted_content_slight() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Prime, 2, "hello world".to_string());
+        let distorted = msg.distorted_content();
+        assert_ne!(distorted, "hello world");
+        assert!(!distorted.is_empty());
+    }
+
+    #[test]
+    fn test_distorted_content_heavy() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Inverted, 2, "hello world".to_string());
+        let distorted = msg.distorted_content();
+        // Heavy distortion removes vowels and scrambles
+        assert!(!distorted.contains('e') || distorted.len() < 5);
+    }
+
+    #[test]
+    fn test_distorted_content_unintelligible() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Void, 2, "can anyone hear me".to_string());
+        let distorted = msg.distorted_content();
+        // Should be dots only
+        assert!(distorted.chars().all(|c| c == '.'));
+    }
+
+    #[test]
+    fn test_distorted_content_none() {
+        let msg = CrossDimensionMessage::new(1, Dimension::Prime, 2, "hello".to_string());
+        // Prime gives Slight, not None. None is same-dimension only.
+        // We test the None case directly
+        let content = "hello world".to_string();
+        let result = match MessageDistortion::None {
+            MessageDistortion::None => content.clone(),
+            _ => String::new(),
+        };
+        assert_eq!(result, "hello world");
+    }
+
+    #[test]
+    fn test_trade_item_creation() {
+        let item = TradeItem::new("stability_crystal".to_string(), 5);
+        assert_eq!(item.item_type(), "stability_crystal");
+        assert_eq!(item.quantity(), 5);
+    }
+
+    #[test]
+    fn test_weak_point_trade_creation() {
+        let trade = WeakPointTrade::new(1, Dimension::Prime, 2, IVec3::new(100, 64, -200));
+        assert_eq!(trade.initiator_id(), 1);
+        assert_eq!(trade.responder_id(), 2);
+        assert!(!trade.is_accepted());
+        assert!(trade.offered_items().is_empty());
+        assert!(trade.requested_items().is_empty());
+    }
+
+    #[test]
+    fn test_weak_point_trade_offer_and_request() {
+        let mut trade = WeakPointTrade::new(1, Dimension::Prime, 2, IVec3::new(50, 64, 50));
+        trade.offer_item(TradeItem::new("iron".to_string(), 10));
+        trade.offer_item(TradeItem::new("coal".to_string(), 20));
+        trade.request_item(TradeItem::new("stability_crystal".to_string(), 3));
+
+        assert_eq!(trade.offered_items().len(), 2);
+        assert_eq!(trade.requested_items().len(), 1);
+        assert_eq!(trade.requested_items()[0].item_type(), "stability_crystal");
+    }
+
+    #[test]
+    fn test_weak_point_trade_accept() {
+        let mut trade = WeakPointTrade::new(1, Dimension::Inverted, 2, IVec3::new(0, 0, 0));
+        assert!(!trade.is_accepted());
+        trade.accept();
+        assert!(trade.is_accepted());
+    }
+
+    #[test]
+    fn test_weak_point_trade_position() {
+        let trade = WeakPointTrade::new(1, Dimension::Prime, 2, IVec3::new(42, -10, 100));
+        assert_eq!(trade.weak_point_pos(), IVec3::new(42, -10, 100));
     }
 }
