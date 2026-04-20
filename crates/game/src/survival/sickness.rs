@@ -157,6 +157,58 @@ impl FractureSickness {
         self.level = 0.0;
         self.current_level_enum = SicknessLevel::None;
     }
+
+    // HUD Display helpers
+
+    /// Get the display color for the current sickness level.
+    ///
+    /// Returns RGB color values (0.0 to 1.0).
+    #[must_use]
+    pub fn display_color(&self) -> [f32; 3] {
+        match self.current_level_enum {
+            SicknessLevel::None => [0.3, 0.9, 0.3],     // Green - healthy
+            SicknessLevel::Mild => [0.8, 0.9, 0.3],    // Yellow-green
+            SicknessLevel::Moderate => [1.0, 0.8, 0.2], // Yellow-orange
+            SicknessLevel::Severe => [1.0, 0.5, 0.2],  // Orange
+            SicknessLevel::Critical => [1.0, 0.2, 0.2], // Red
+        }
+    }
+
+    /// Get the warning text for the current sickness level.
+    #[must_use]
+    pub fn warning_text(&self) -> Option<&'static str> {
+        match self.current_level_enum {
+            SicknessLevel::None => None,
+            SicknessLevel::Mild => Some("Mild disorientation"),
+            SicknessLevel::Moderate => Some("Vision impaired"),
+            SicknessLevel::Severe => Some("Hallucinations occurring"),
+            SicknessLevel::Critical => Some("CRITICAL - Return to Prime!"),
+        }
+    }
+
+    /// Get the effect intensity for visual/audio effects (0.0 to 1.0).
+    #[must_use]
+    pub fn effect_intensity(&self) -> f32 {
+        match self.current_level_enum {
+            SicknessLevel::None => 0.0,
+            SicknessLevel::Mild => 0.1,
+            SicknessLevel::Moderate => 0.3,
+            SicknessLevel::Severe => 0.6,
+            SicknessLevel::Critical => 1.0,
+        }
+    }
+
+    /// Get the pulse rate for HUD animations (Hz).
+    #[must_use]
+    pub fn pulse_rate(&self) -> f32 {
+        match self.current_level_enum {
+            SicknessLevel::None => 0.0,
+            SicknessLevel::Mild => 0.3,
+            SicknessLevel::Moderate => 0.5,
+            SicknessLevel::Severe => 1.0,
+            SicknessLevel::Critical => 2.0,
+        }
+    }
 }
 
 impl Default for FractureSickness {

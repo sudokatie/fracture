@@ -8,6 +8,7 @@ description = "UI system for the Lattice game engine"
 
 [dependencies]
 engine_core = { path = "../engine_core" }
+engine_physics = { path = "../engine_physics" }
 egui.workspace = true
 egui-wgpu.workspace = true
 egui-winit.workspace = true

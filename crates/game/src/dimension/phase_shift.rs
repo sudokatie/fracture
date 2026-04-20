@@ -168,6 +168,68 @@ impl PhaseShiftManager {
         self.shift_cooldown = 0.0;
         self.total_shifts = 0;
     }
+
+    // HUD Display helpers
+
+    /// Get the display color for the current dimension.
+    ///
+    /// Returns RGB color values (0.0 to 1.0).
+    #[must_use]
+    pub fn display_color(&self) -> [f32; 3] {
+        match self.current_dimension {
+            Dimension::Prime => [0.3, 0.7, 1.0],     // Light blue
+            Dimension::Inverted => [1.0, 0.5, 0.2],  // Orange
+            Dimension::Void => [0.4, 0.4, 0.5],      // Gray
+            Dimension::Nexus => [0.7, 0.3, 0.9],     // Purple
+        }
+    }
+
+    /// Get the display label for the current dimension.
+    #[must_use]
+    pub fn display_label(&self) -> &'static str {
+        match self.current_dimension {
+            Dimension::Prime => "PRIME",
+            Dimension::Inverted => "INVERTED",
+            Dimension::Void => "VOID",
+            Dimension::Nexus => "NEXUS",
+        }
+    }
+
+    /// Get the cooldown progress (0.0 = full cooldown, 1.0 = ready).
+    #[must_use]
+    pub fn cooldown_progress(&self) -> f32 {
+        if self.max_cooldown <= 0.0 {
+            return 1.0;
+        }
+        1.0 - (self.shift_cooldown / self.max_cooldown).clamp(0.0, 1.0)
+    }
+
+    /// Get formatted cooldown text.
+    #[must_use]
+    pub fn cooldown_text(&self) -> Option<String> {
+        if self.shift_cooldown <= 0.0 {
+            None
+        } else {
+            Some(format!("{:.1}s", self.shift_cooldown))
+        }
+    }
+
+    /// Check if shift ability should show as unavailable in HUD.
+    #[must_use]
+    pub fn is_shift_blocked(&self) -> bool {
+        self.shift_cooldown > 0.0
+    }
+
+    /// Get the icon name for the current dimension.
+    #[must_use]
+    pub fn icon(&self) -> &'static str {
+        match self.current_dimension {
+            Dimension::Prime => "icon_dimension_prime",
+            Dimension::Inverted => "icon_dimension_inverted",
+            Dimension::Void => "icon_dimension_void",
+            Dimension::Nexus => "icon_dimension_nexus",
+        }
+    }
 }
 
 impl Default for PhaseShiftManager {

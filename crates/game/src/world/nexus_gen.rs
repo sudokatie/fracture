@@ -71,6 +71,99 @@ impl NexusBiome {
             NexusBiome::StabilityOasis => 0.05,
         }
     }
+
+    /// Get the visual fog color for this biome.
+    ///
+    /// Returns RGBA color values (0.0 to 1.0).
+    #[must_use]
+    pub fn fog_color(&self) -> [f32; 4] {
+        match self {
+            NexusBiome::DimensionBleed => [0.6, 0.3, 0.7, 0.8],   // Purple bleed
+            NexusBiome::CrystalNexus => [0.4, 0.5, 0.8, 0.6],    // Crystal blue
+            NexusBiome::ChaosZone => [0.8, 0.2, 0.4, 0.9],       // Chaotic red-purple
+            NexusBiome::StabilityOasis => [0.5, 0.6, 0.7, 0.4],  // Calm gray-blue
+        }
+    }
+
+    /// Get the ambient light modifier for this biome.
+    ///
+    /// Returns multiplier (0.0 to 1.5) for base dimension light.
+    #[must_use]
+    pub fn light_modifier(&self) -> f32 {
+        match self {
+            NexusBiome::DimensionBleed => 0.8,
+            NexusBiome::CrystalNexus => 1.2,      // Crystal glow
+            NexusBiome::ChaosZone => 0.5,         // Dim chaos
+            NexusBiome::StabilityOasis => 1.0,
+        }
+    }
+
+    /// Get the glow color for this biome.
+    ///
+    /// Returns RGB color values (0.0 to 1.0).
+    #[must_use]
+    pub fn glow_color(&self) -> [f32; 3] {
+        match self {
+            NexusBiome::DimensionBleed => [0.8, 0.4, 0.9],   // Purple glow
+            NexusBiome::CrystalNexus => [0.3, 0.8, 1.0],    // Cyan crystal glow
+            NexusBiome::ChaosZone => [1.0, 0.3, 0.5],       // Red chaos glow
+            NexusBiome::StabilityOasis => [0.5, 0.7, 0.5],  // Calm green glow
+        }
+    }
+
+    /// Get the distortion strength for this biome.
+    ///
+    /// Returns 0.0 (none) to 1.0 (maximum distortion).
+    #[must_use]
+    pub fn distortion_strength(&self) -> f32 {
+        match self {
+            NexusBiome::DimensionBleed => 0.6,
+            NexusBiome::CrystalNexus => 0.2,
+            NexusBiome::ChaosZone => 0.9,
+            NexusBiome::StabilityOasis => 0.0,
+        }
+    }
+
+    /// Check if this biome has ambient particles.
+    #[must_use]
+    pub fn has_particles(&self) -> bool {
+        true // All Nexus biomes have particles
+    }
+
+    /// Get the particle type for this biome.
+    #[must_use]
+    pub fn particle_type(&self) -> &'static str {
+        match self {
+            NexusBiome::DimensionBleed => "dimensional_sparks",
+            NexusBiome::CrystalNexus => "crystal_shards",
+            NexusBiome::ChaosZone => "chaos_embers",
+            NexusBiome::StabilityOasis => "calm_motes",
+        }
+    }
+
+    /// Get the color shift speed for this biome.
+    ///
+    /// Returns cycles per second for color animation.
+    #[must_use]
+    pub fn color_shift_speed(&self) -> f32 {
+        match self {
+            NexusBiome::DimensionBleed => 0.5,
+            NexusBiome::CrystalNexus => 0.2,
+            NexusBiome::ChaosZone => 2.0,
+            NexusBiome::StabilityOasis => 0.0,
+        }
+    }
+
+    /// Get the terrain shimmer intensity for this biome.
+    #[must_use]
+    pub fn shimmer_intensity(&self) -> f32 {
+        match self {
+            NexusBiome::DimensionBleed => 0.4,
+            NexusBiome::CrystalNexus => 0.8,
+            NexusBiome::ChaosZone => 0.6,
+            NexusBiome::StabilityOasis => 0.1,
+        }
+    }
 }
 
 /// World generator for the Nexus dimension.
@@ -231,5 +324,58 @@ mod tests {
         let chunk = generator.generate_chunk(IVec3::new(0, 64, 0));
 
         assert!(!chunk.resources.is_empty());
+    }
+
+    #[test]
+    fn test_biome_fog_color() {
+        let bleed_fog = NexusBiome::DimensionBleed.fog_color();
+        assert_eq!(bleed_fog.len(), 4);
+
+        let chaos_fog = NexusBiome::ChaosZone.fog_color();
+        assert!(chaos_fog[3] > bleed_fog[3]); // Chaos has denser fog
+    }
+
+    #[test]
+    fn test_biome_light_modifier() {
+        assert!(NexusBiome::CrystalNexus.light_modifier() > NexusBiome::ChaosZone.light_modifier());
+    }
+
+    #[test]
+    fn test_biome_glow_color() {
+        let crystal_glow = NexusBiome::CrystalNexus.glow_color();
+        assert_eq!(crystal_glow.len(), 3);
+        assert!(crystal_glow[2] > crystal_glow[0]); // Blue-cyan dominant
+    }
+
+    #[test]
+    fn test_biome_distortion() {
+        assert!(NexusBiome::ChaosZone.distortion_strength() > NexusBiome::CrystalNexus.distortion_strength());
+        assert!((NexusBiome::StabilityOasis.distortion_strength() - 0.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_biome_particles() {
+        // All Nexus biomes have particles
+        assert!(NexusBiome::DimensionBleed.has_particles());
+        assert!(NexusBiome::CrystalNexus.has_particles());
+        assert!(NexusBiome::ChaosZone.has_particles());
+        assert!(NexusBiome::StabilityOasis.has_particles());
+    }
+
+    #[test]
+    fn test_biome_particle_types() {
+        assert_eq!(NexusBiome::CrystalNexus.particle_type(), "crystal_shards");
+        assert_eq!(NexusBiome::ChaosZone.particle_type(), "chaos_embers");
+    }
+
+    #[test]
+    fn test_biome_color_shift_speed() {
+        assert!(NexusBiome::ChaosZone.color_shift_speed() > NexusBiome::CrystalNexus.color_shift_speed());
+        assert!((NexusBiome::StabilityOasis.color_shift_speed() - 0.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_biome_shimmer_intensity() {
+        assert!(NexusBiome::CrystalNexus.shimmer_intensity() > NexusBiome::StabilityOasis.shimmer_intensity());
     }
 }

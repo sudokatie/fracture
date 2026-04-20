@@ -57,6 +57,74 @@ impl PrimeBiome {
             ],
         }
     }
+
+    /// Get the visual fog color for this biome.
+    ///
+    /// Returns RGBA color values (0.0 to 1.0).
+    #[must_use]
+    pub fn fog_color(&self) -> [f32; 4] {
+        match self {
+            PrimeBiome::Forest => [0.6, 0.75, 0.6, 1.0],   // Green-tinted fog
+            PrimeBiome::Plains => [0.8, 0.85, 0.95, 1.0],  // Light blue sky
+            PrimeBiome::Mountains => [0.9, 0.92, 0.98, 1.0], // White mountain air
+            PrimeBiome::River => [0.7, 0.8, 0.9, 1.0],     // Blue water reflection
+        }
+    }
+
+    /// Get the ambient light modifier for this biome.
+    ///
+    /// Returns multiplier (0.0 to 1.5) for base dimension light.
+    #[must_use]
+    pub fn light_modifier(&self) -> f32 {
+        match self {
+            PrimeBiome::Forest => 0.7,     // Shaded by trees
+            PrimeBiome::Plains => 1.0,     // Full sunlight
+            PrimeBiome::Mountains => 1.1,  // Bright at altitude
+            PrimeBiome::River => 0.95,     // Slight shade
+        }
+    }
+
+    /// Get the grass/foliage color for this biome.
+    ///
+    /// Returns RGB color values (0.0 to 1.0).
+    #[must_use]
+    pub fn foliage_color(&self) -> [f32; 3] {
+        match self {
+            PrimeBiome::Forest => [0.2, 0.5, 0.2],    // Dark green
+            PrimeBiome::Plains => [0.5, 0.7, 0.3],   // Yellow-green
+            PrimeBiome::Mountains => [0.3, 0.4, 0.25], // Muted green
+            PrimeBiome::River => [0.35, 0.55, 0.3],  // Medium green
+        }
+    }
+
+    /// Get the water color tint for this biome.
+    ///
+    /// Returns RGB color values (0.0 to 1.0).
+    #[must_use]
+    pub fn water_color(&self) -> [f32; 3] {
+        match self {
+            PrimeBiome::Forest => [0.2, 0.4, 0.35],   // Dark pond
+            PrimeBiome::Plains => [0.3, 0.5, 0.7],   // Clear blue
+            PrimeBiome::Mountains => [0.4, 0.6, 0.8], // Crystal clear
+            PrimeBiome::River => [0.25, 0.45, 0.55],  // River blue
+        }
+    }
+
+    /// Check if this biome has ambient particles.
+    #[must_use]
+    pub fn has_particles(&self) -> bool {
+        matches!(self, PrimeBiome::Forest | PrimeBiome::River)
+    }
+
+    /// Get the particle type for this biome.
+    #[must_use]
+    pub fn particle_type(&self) -> Option<&'static str> {
+        match self {
+            PrimeBiome::Forest => Some("leaves"),
+            PrimeBiome::River => Some("water_droplets"),
+            _ => None,
+        }
+    }
 }
 
 /// Generated chunk data for any dimension.
@@ -270,5 +338,50 @@ mod tests {
         let chunk = generator.generate_chunk(IVec3::new(0, 64, 0));
 
         assert!(!chunk.resources.is_empty());
+    }
+
+    #[test]
+    fn test_biome_fog_color() {
+        let forest_fog = PrimeBiome::Forest.fog_color();
+        assert_eq!(forest_fog.len(), 4);
+        assert!(forest_fog[1] > forest_fog[0]); // Green dominant
+
+        let plains_fog = PrimeBiome::Plains.fog_color();
+        assert!(plains_fog[2] > plains_fog[0]); // Blue dominant
+    }
+
+    #[test]
+    fn test_biome_light_modifier() {
+        assert!(PrimeBiome::Forest.light_modifier() < PrimeBiome::Plains.light_modifier());
+        assert!(PrimeBiome::Mountains.light_modifier() > PrimeBiome::Plains.light_modifier());
+    }
+
+    #[test]
+    fn test_biome_foliage_color() {
+        let forest = PrimeBiome::Forest.foliage_color();
+        assert_eq!(forest.len(), 3);
+        assert!(forest[1] > forest[0]); // Green dominant
+    }
+
+    #[test]
+    fn test_biome_water_color() {
+        let mountain_water = PrimeBiome::Mountains.water_color();
+        assert_eq!(mountain_water.len(), 3);
+        assert!(mountain_water[2] > mountain_water[0]); // Blue dominant
+    }
+
+    #[test]
+    fn test_biome_particles() {
+        assert!(PrimeBiome::Forest.has_particles());
+        assert!(PrimeBiome::River.has_particles());
+        assert!(!PrimeBiome::Plains.has_particles());
+        assert!(!PrimeBiome::Mountains.has_particles());
+    }
+
+    #[test]
+    fn test_biome_particle_types() {
+        assert_eq!(PrimeBiome::Forest.particle_type(), Some("leaves"));
+        assert_eq!(PrimeBiome::River.particle_type(), Some("water_droplets"));
+        assert!(PrimeBiome::Plains.particle_type().is_none());
     }
 }

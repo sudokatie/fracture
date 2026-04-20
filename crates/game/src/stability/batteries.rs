@@ -139,6 +139,122 @@ impl StabilityBattery {
     }
 }
 
+/// Anchor fuel cell tiers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AnchorFuelCellTier {
+    /// Small fuel cell (50 fuel).
+    Small,
+    /// Medium fuel cell (200 fuel).
+    Medium,
+    /// Large fuel cell (500 fuel).
+    Large,
+}
+
+impl AnchorFuelCellTier {
+    /// Get the fuel amount for this tier.
+    #[must_use]
+    pub fn fuel_amount(&self) -> f32 {
+        match self {
+            AnchorFuelCellTier::Small => 50.0,
+            AnchorFuelCellTier::Medium => 200.0,
+            AnchorFuelCellTier::Large => 500.0,
+        }
+    }
+
+    /// Get all tier variants.
+    #[must_use]
+    pub fn all() -> &'static [AnchorFuelCellTier] {
+        &[
+            AnchorFuelCellTier::Small,
+            AnchorFuelCellTier::Medium,
+            AnchorFuelCellTier::Large,
+        ]
+    }
+}
+
+impl fmt::Display for AnchorFuelCellTier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            AnchorFuelCellTier::Small => write!(f, "Small"),
+            AnchorFuelCellTier::Medium => write!(f, "Medium"),
+            AnchorFuelCellTier::Large => write!(f, "Large"),
+        }
+    }
+}
+
+/// A fuel cell for powering dimensional anchors.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AnchorFuelCell {
+    /// Fuel cell tier.
+    tier: AnchorFuelCellTier,
+    /// Remaining fuel amount.
+    fuel_amount: f32,
+}
+
+impl AnchorFuelCell {
+    /// Create a new fuel cell of the given tier.
+    #[must_use]
+    pub fn new(tier: AnchorFuelCellTier) -> Self {
+        Self {
+            tier,
+            fuel_amount: tier.fuel_amount(),
+        }
+    }
+
+    /// Create a fuel cell from a tier string.
+    #[must_use]
+    pub fn from_tier_str(tier: &str) -> Option<Self> {
+        let cell_tier = match tier.to_lowercase().as_str() {
+            "small" => AnchorFuelCellTier::Small,
+            "medium" => AnchorFuelCellTier::Medium,
+            "large" => AnchorFuelCellTier::Large,
+            _ => return None,
+        };
+        Some(Self::new(cell_tier))
+    }
+
+    /// Use fuel from the cell.
+    ///
+    /// Returns the actual amount of fuel used (may be less if insufficient).
+    pub fn use_fuel(&mut self, amount: f32) -> f32 {
+        if amount <= 0.0 {
+            return 0.0;
+        }
+
+        let used = amount.min(self.fuel_amount);
+        self.fuel_amount -= used;
+        used
+    }
+
+    /// Get the remaining fuel amount.
+    #[must_use]
+    pub fn fuel_remaining(&self) -> f32 {
+        self.fuel_amount
+    }
+
+    /// Get the fuel cell tier.
+    #[must_use]
+    pub fn tier(&self) -> AnchorFuelCellTier {
+        self.tier
+    }
+
+    /// Get remaining fuel as a percentage (0.0 to 1.0).
+    #[must_use]
+    pub fn remaining_percentage(&self) -> f32 {
+        let max = self.tier.fuel_amount();
+        if max <= 0.0 {
+            return 0.0;
+        }
+        (self.fuel_amount / max).clamp(0.0, 1.0)
+    }
+
+    /// Check if the fuel cell is empty.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.fuel_amount <= 0.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -212,5 +328,78 @@ mod tests {
 
         battery.discharge(50.0);
         assert!((battery.remaining_percentage() - 0.5).abs() < f32::EPSILON);
+    }
+
+    // AnchorFuelCell tests
+    #[test]
+    fn test_fuel_cell_tier_fuel_amount() {
+        assert!((AnchorFuelCellTier::Small.fuel_amount() - 50.0).abs() < f32::EPSILON);
+        assert!((AnchorFuelCellTier::Medium.fuel_amount() - 200.0).abs() < f32::EPSILON);
+        assert!((AnchorFuelCellTier::Large.fuel_amount() - 500.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_fuel_cell_tier_display() {
+        assert_eq!(format!("{}", AnchorFuelCellTier::Small), "Small");
+        assert_eq!(format!("{}", AnchorFuelCellTier::Medium), "Medium");
+        assert_eq!(format!("{}", AnchorFuelCellTier::Large), "Large");
+    }
+
+    #[test]
+    fn test_fuel_cell_new() {
+        let cell = AnchorFuelCell::new(AnchorFuelCellTier::Medium);
+        assert_eq!(cell.tier(), AnchorFuelCellTier::Medium);
+        assert!((cell.fuel_remaining() - 200.0).abs() < f32::EPSILON);
+        assert!(!cell.is_empty());
+    }
+
+    #[test]
+    fn test_fuel_cell_from_tier_str() {
+        let cell = AnchorFuelCell::from_tier_str("small");
+        assert!(cell.is_some());
+        assert_eq!(cell.unwrap().tier(), AnchorFuelCellTier::Small);
+
+        let cell = AnchorFuelCell::from_tier_str("MEDIUM");
+        assert!(cell.is_some());
+        assert_eq!(cell.unwrap().tier(), AnchorFuelCellTier::Medium);
+
+        let cell = AnchorFuelCell::from_tier_str("invalid");
+        assert!(cell.is_none());
+    }
+
+    #[test]
+    fn test_fuel_cell_use_fuel() {
+        let mut cell = AnchorFuelCell::new(AnchorFuelCellTier::Small);
+
+        let used = cell.use_fuel(20.0);
+        assert!((used - 20.0).abs() < f32::EPSILON);
+        assert!((cell.fuel_remaining() - 30.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_fuel_cell_use_fuel_insufficient() {
+        let mut cell = AnchorFuelCell::new(AnchorFuelCellTier::Small);
+
+        let used = cell.use_fuel(100.0);
+        assert!((used - 50.0).abs() < f32::EPSILON);
+        assert!(cell.is_empty());
+    }
+
+    #[test]
+    fn test_fuel_cell_use_fuel_negative() {
+        let mut cell = AnchorFuelCell::new(AnchorFuelCellTier::Small);
+
+        let used = cell.use_fuel(-10.0);
+        assert!((used - 0.0).abs() < f32::EPSILON);
+        assert!((cell.fuel_remaining() - 50.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_fuel_cell_remaining_percentage() {
+        let mut cell = AnchorFuelCell::new(AnchorFuelCellTier::Small);
+        assert!((cell.remaining_percentage() - 1.0).abs() < f32::EPSILON);
+
+        cell.use_fuel(25.0);
+        assert!((cell.remaining_percentage() - 0.5).abs() < f32::EPSILON);
     }
 }

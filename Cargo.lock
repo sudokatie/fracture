@@ -884,6 +884,7 @@ dependencies = [
  "approx",
  "bytemuck",
  "engine_core",
+ "engine_physics",
  "engine_world",
  "glam",
  "image",
@@ -902,6 +903,7 @@ dependencies = [
  "egui-wgpu",
  "egui-winit",
  "engine_core",
+ "engine_physics",
  "thiserror 2.0.18",
  "tracing",
 ]
