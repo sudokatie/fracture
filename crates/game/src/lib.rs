@@ -17,3 +17,6 @@ pub mod networking;
 pub mod stability;
 pub mod survival;
 pub mod world;
+
+#[cfg(test)]
+mod integration_tests;

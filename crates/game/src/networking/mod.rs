@@ -1,6 +1,8 @@
 //! Client-side networking for multiplayer.
 
 pub mod commands;
+pub mod cross_dimension;
+pub mod dimension_sync;
 
 use std::time::Duration;
 
