@@ -10,4 +10,5 @@ pub mod ecs;
 pub mod entities;
 pub mod inventory;
 pub mod networking;
+pub mod stability;
 pub mod survival;
