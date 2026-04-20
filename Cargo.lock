@@ -871,6 +871,8 @@ version = "0.1.0"
 dependencies = [
  "engine_core",
  "glam",
+ "rand",
+ "serde",
  "thiserror 2.0.18",
  "tracing",
 ]
@@ -1048,6 +1050,42 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb4cb245038516f5f85277875cdaa4f7d2c9a0fa0468de06ed190163b1581fcf"
 dependencies = [
  "percent-encoding",
+]
+
+[[package]]
+name = "fracture_game"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "engine_ai",
+ "engine_audio",
+ "engine_core",
+ "engine_network",
+ "engine_physics",
+ "engine_render",
+ "engine_ui",
+ "engine_world",
+ "glam",
+ "hecs",
+ "ron",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "fracture_server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "engine_ai",
+ "engine_core",
+ "engine_network",
+ "engine_world",
+ "glam",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1566,42 +1604,6 @@ dependencies = [
  "send_wrapper",
  "symphonia",
  "triple_buffer",
-]
-
-[[package]]
-name = "lattice_game"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "engine_ai",
- "engine_audio",
- "engine_core",
- "engine_network",
- "engine_physics",
- "engine_render",
- "engine_ui",
- "engine_world",
- "glam",
- "hecs",
- "ron",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tracing",
-]
-
-[[package]]
-name = "lattice_server"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "engine_ai",
- "engine_core",
- "engine_network",
- "engine_world",
- "glam",
- "tokio",
- "tracing",
 ]
 
 [[package]]

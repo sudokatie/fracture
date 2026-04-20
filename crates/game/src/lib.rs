@@ -5,6 +5,7 @@
 pub mod ai;
 pub mod building;
 pub mod crafting;
+pub mod dimension;
 pub mod ecs;
 pub mod entities;
 pub mod inventory;

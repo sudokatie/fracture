@@ -11,6 +11,8 @@ engine_core = { path = "../engine_core" }
 glam.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+serde.workspace = true
+rand.workspace = true
 
 [lints]
 workspace = true
